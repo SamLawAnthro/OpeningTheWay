@@ -30,7 +30,7 @@ def generate_chapter(document_embeddings, sbert_model, book_split, prompt_embedd
     # calculate the cosine similarity between the prompt_embedding and each of the document embeddings, returns a tensor that is the size
     # of documents in document_embeddings, with each index being the similiarity between prompt_embedding and document_embedding
     
-    cosine_scores = util.pytorch_cos_sim(prompt_embedding, document_embeddings)
+    cosine_scores = util.cos_sim(prompt_embedding, document_embeddings)
     
     # finds most similar document and returns it. 
     # The largest number in the tensor will be the most similar passage, so the index of that value will be the chapter we want
