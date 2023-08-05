@@ -4,25 +4,43 @@ import re
 import torch
 
 #loads text file, read it and assigns the string to a variable
-f = open("tao.txt","r")
-tao_text=f.read()
+@st.cache_data
+def load_book():
+    f = open("tao.txt","r")
+    print("loaded Tao")
+    return f.read()
 
-#loads text file, read it and assigns the string to a variable
-f = open("tao.txt","r")
-tao_text=f.read()
+tao_text = load_book()
 
+@st.cache_data
 # pre-process the text into a list where each item is a chapter (the base unit which we want to analyse similarity)
 def split_book_string(book_string):
     split_lines = re.split(r'\d+\s*-\s*', book_string)
     non_empty_lines = [line for line in split_lines if line.strip()]
+    print("Split tao")
     return non_empty_lines
     
 tao_split = split_book_string(tao_text)
 
-#for each document, create a tensor embedding by using the sentence-embedding library
-sbert_model = SentenceTransformer('stsb-roberta-large')
-document_embeddings = sbert_model.encode(tao_split, convert_to_tensor=True)
 
+# load model when app starts 
+@st.cache_resource
+def load_model():
+    model = SentenceTransformer('stsb-roberta-large')
+    print("loaded model")
+    return model
+sbert_model = load_model()
+
+
+
+#assign document embeddings to cache
+@st.cache_data
+def embed_book(book_split):
+    embeddings = sbert_model.encode(book_split)
+    print("Embedded book")
+    return embeddings
+
+document_embeddings = embed_book(tao_split) 
 
 def generate_chapter(document_embeddings, sbert_model, book_split, prompt_embedding): 
 
@@ -31,7 +49,7 @@ def generate_chapter(document_embeddings, sbert_model, book_split, prompt_embedd
     # of documents in document_embeddings, with each index being the similiarity between prompt_embedding and document_embedding
     
     cosine_scores = util.cos_sim(prompt_embedding, document_embeddings)
-    
+    print("calculated cosine scores")
     # finds most similar document and returns it. 
     # The largest number in the tensor will be the most similar passage, so the index of that value will be the chapter we want
     chosen_chapter = torch.argmax(cosine_scores).item()
@@ -49,7 +67,7 @@ def main():
 
     #  Embeds the user's response 
     prompt_embedding = sbert_model.encode(prompt, convert_to_tensor=True)
-
+    print("embedded prompt")
 
     if prompt:
         # Generate and display the most relevant chapter
